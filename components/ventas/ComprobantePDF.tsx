@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, Image, StyleSheet, Image } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
 import type { ResumenVenta } from './tipos'
 import type { MedicionResumen } from '@/lib/mediciones'
 
