@@ -10,9 +10,12 @@ const barlow = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "LubriGestión",
-  description: "Sistema de inventario, ventas, compras y mantenimiento",
-};
+  title: {
+    default: 'Zona 11 · Lubricentro',
+    template: '%s · Zona 11',
+  },
+  description: 'Sistema de gestión del lubricentro Zona 11',
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
