@@ -58,7 +58,8 @@ export default function Sidebar({ rol, nombre, org }: { rol: Rol; nombre: string
       {/* Barra superior: solo en pantallas chicas */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-borde bg-panel px-4 py-2.5 md:hidden">
         <div className="min-w-0">
-          <p className="font-display text-2xl font-bold leading-none">LubriGestión</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt={org} className="h-9 w-auto" />
           <p className="truncate text-xs text-suave">{org}</p>
         </div>
         <button type="button" onClick={() => setAbierto(true)}
@@ -80,7 +81,8 @@ export default function Sidebar({ rol, nombre, org }: { rol: Rol; nombre: string
       >
         <div className="flex items-start justify-between gap-2 px-2">
           <div className="min-w-0">
-            <p className="font-display text-3xl font-bold leading-none">LubriGestión</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt={org} className="h-12 w-auto" />
             <p className="mt-1 truncate text-sm text-suave">{org}</p>
           </div>
           <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar menú"

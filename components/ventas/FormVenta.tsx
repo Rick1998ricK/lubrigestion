@@ -317,6 +317,7 @@ export default function FormVenta({
       resumen: {
         ventaId,
         org: orgNombre,
+        logo: `${window.location.origin}/logo.png`,
         fecha: val('fecha'),
         total: totalVenta,
         cliente: { nombre: val('nombres'), celular: val('celular'), correo: val('correo') },

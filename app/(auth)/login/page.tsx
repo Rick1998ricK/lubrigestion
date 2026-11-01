@@ -28,9 +28,11 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen grid place-items-center p-4">
       <form onSubmit={onSubmit} className="w-full max-w-sm rounded-xl border border-borde bg-tarjeta p-7 space-y-5">
-        <div>
-          <h1 className="font-display text-4xl font-bold leading-none">LubriGestión</h1>
-          <p className="mt-2 text-sm text-suave">Inicia sesión para continuar</p>
+        <div className="space-y-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Lubricentro Zona 11" className="mx-auto h-14 w-auto max-w-full" />
+          <h1 className="sr-only">Zona 11 · Iniciar sesión</h1>
+          <p className="text-center text-sm text-suave">Inicia sesión para continuar</p>
         </div>
         <div className="space-y-1.5">
           <label htmlFor="email" className="text-sm font-semibold">Correo</label>
@@ -50,6 +52,7 @@ export default function LoginPage() {
         <Link href="/recuperar" className="block text-center text-sm text-suave hover:text-acento">
           ¿Olvidaste tu contraseña?
         </Link>
+        <p className="pt-1 text-center text-xs text-suave/70">Sistema LubriGestión</p>
       </form>
     </main>
   )

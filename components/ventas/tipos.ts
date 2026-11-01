@@ -3,6 +3,7 @@ import type { MedicionResumen } from '@/lib/mediciones'
 export type ResumenVenta = {
   ventaId: number
   org: string
+  logo?: string
   fecha: string
   total: number
   cliente: { nombre: string; celular: string; correo: string }

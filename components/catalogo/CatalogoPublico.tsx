@@ -66,6 +66,8 @@ export default function CatalogoPublico({
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
       <header>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt={org} className="mb-3 h-14 w-auto" />
         <p className="text-xs uppercase tracking-widest text-[#9FB3C8]">Catálogo de productos</p>
         <h1 className="font-display text-4xl uppercase tracking-wide text-[#F1F5F9] md:text-5xl">{org}</h1>
       </header>

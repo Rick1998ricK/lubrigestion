@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet, Image } from '@react-pdf/renderer'
 import type { ResumenVenta } from './tipos'
 import type { MedicionResumen } from '@/lib/mediciones'
 
@@ -85,6 +85,7 @@ export default function ComprobantePDF({ r }: { r: ResumenVenta }) {
 
         <View style={s.header}>
           <View>
+            {r.logo ? <Image src={r.logo} style={{ height: 38, marginBottom: 6, objectFit: 'contain' }} /> : null}
             <Text style={s.org}>{r.org}</Text>
             <Text style={s.suave}>Constancia de servicio</Text>
           </View>
