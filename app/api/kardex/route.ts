@@ -277,6 +277,7 @@ export async function GET(req: NextRequest) {
   const desdeMs = Date.parse(`${desde}T00:00:00-05:00`)
   const hastaMs = Date.parse(`${hasta}T23:59:59.999-05:00`)
   const idProd = sp.get('producto')
+  const marca = sp.get('marca') ?? ''
 
   try {
     const { data: org } = await supabase.from('organizaciones').select('nombre').single()
@@ -301,9 +302,11 @@ export async function GET(req: NextRequest) {
       hojaProducto(wb, orgNombre, p, calcular(p, movs, desdeMs, hastaMs), desde, hasta)
       archivo = `kardex-${p.codigo_tienda ?? p.id}-${desde}_${hasta}.xlsx`
     } else {
-      const productos = await traerTodo((a, b) =>
-        supabase.from('productos').select(colsProd).order('id').range(a, b),
-      )
+      const productos = (
+        await traerTodo((a, b) =>
+          supabase.from('productos').select(colsProd).order('id').range(a, b),
+        )
+      ).filter((p: any) => !marca || p.marcas?.nombre === marca)
       const movs = (await traerTodo((a, b) =>
         supabase.from('movimientos_inventario').select(colsMov)
           .order('fecha').order('tipo').order('ref_id').range(a, b),
@@ -314,7 +317,7 @@ export async function GET(req: NextRequest) {
       // Hoja 1: valorizado
       const wsV = wb.addWorksheet('Valorizado', { views: [{ state: 'frozen', ySplit: 4 }] })
       wsV.mergeCells('A1:N1')
-      wsV.getCell('A1').value = `KARDEX VALORIZADO · ${orgNombre} · ${fechaCorta(desde)} al ${fechaCorta(hasta)}`
+      wsV.getCell('A1').value = `KARDEX VALORIZADO · ${orgNombre}${marca ? ` · ${marca}` : ''} · ${fechaCorta(desde)} al ${fechaCorta(hasta)}`
       wsV.getCell('A1').font = { bold: true, size: 14 }
       wsV.mergeCells('A2:N2')
       wsV.getCell('A2').value = 'Método de valuación: promedio ponderado. P. venta y margen son datos internos: no compartir.'
@@ -382,7 +385,7 @@ export async function GET(req: NextRequest) {
           wsV.getCell(tot, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: AMARILLO } }
         }
       }
-      archivo = `kardex-general-${desde}_${hasta}.xlsx`
+      archivo = `kardex-general${marca ? `-${marca.replace(/[^\w-]+/g, '_')}` : ''}-${desde}_${hasta}.xlsx`
     }
 
     const buffer = await wb.xlsx.writeBuffer()

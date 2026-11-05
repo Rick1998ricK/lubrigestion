@@ -53,21 +53,27 @@ function Varilla({ stock, max, minimo }: { stock: number; max: number; minimo: n
     tipos: TipoProducto[]
   }) {
   const [tipo, setTipo] = useState('')
+  const [marca, setMarca] = useState('')
   const [q, setQ] = useState('')
   const [soloBajo, setSoloBajo] = useState(false)
 
   const max = Math.max(24, ...filas.map((f) => f.stock))
+  const marcas = useMemo(
+    () => Array.from(new Set(filas.map((f) => f.marca).filter((m): m is string => !!m))).sort((a, b) => a.localeCompare(b)),
+    [filas],
+  )
 
   const visibles = useMemo(() => {
     const t = q.trim().toLowerCase()
     return filas.filter((p) => {
       if (tipo && p.tipo !== tipo) return false
+      if (marca && p.marca !== marca) return false
       if (soloBajo && p.stock >= minimoDe(p.stock_minimo)) return false
       if (!t) return true
       return [p.nombre, p.marca, p.viscosidad_codigo, p.codigo, p.ean, p.codigo_tienda, p.presentacion, p.ubicacion, p.detalle, p.buscable]
         .some((v) => v?.toLowerCase().includes(t))
     })
-  }, [filas, tipo, q, soloBajo])
+  }, [filas, tipo, marca, q, soloBajo])
 
   const control =
     'rounded-lg border border-borde bg-fondo px-3 py-2.5 text-sm text-texto outline-none focus:border-acento focus-visible:ring-2 focus-visible:ring-acento'
@@ -85,6 +91,13 @@ function Varilla({ stock, max, minimo }: { stock: number; max: number; minimo: n
             {tipos.map((t) => (
               <option key={t.clave} value={t.clave}>{t.nombre_plural}</option>
             ))}
+        </select>
+        <select value={marca} onChange={(e) => setMarca(e.target.value)}
+          aria-label="Filtrar por marca" className={control}>
+          <option value="">Todas las marcas</option>
+          {marcas.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
         </select>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={soloBajo} onChange={(e) => setSoloBajo(e.target.checked)}

@@ -162,7 +162,7 @@ export default function FormCompra({
     e.preventDefault()
     setError('')
     setOk('')
-    const validas = lineas.filter((l) => l.producto_id !== '' && l.cantidad > 0)
+    const validas = lineas.filter((l) => l.producto_id !== '' && l.cantidad >= 0)
     if (validas.length === 0) return setError('Agrega al menos un producto.')
     if (condicion === 'credito' && !fechaLimite)
       return setError('Indica la fecha límite de pago del crédito.')
@@ -268,8 +268,9 @@ export default function FormCompra({
                   />
                 </div>
                 <input
-                  type="number" min={1} className={input} value={l.cantidad}
-                  onChange={(e) => setLinea(i, { cantidad: Number(e.target.value) })}
+                  type="number" min={0} step={1} className={input} value={l.cantidad}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setLinea(i, { cantidad: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
                   aria-label="Cantidad"
                 />
                 <input

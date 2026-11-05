@@ -5,7 +5,17 @@ import FormCompra from '@/components/compras/FormCompra'
 import ListaCompras from '@/components/compras/ListaCompras'
 import { cargarTipos } from '@/lib/tipos'
 
-export default async function ComprasPage() {
+const POR_PAGINA = 10
+
+export default async function ComprasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ p?: string }>
+}) {
+  const sp = await searchParams
+  const pagina = Math.max(1, Math.floor(Number(sp.p)) || 1)
+  const desde = (pagina - 1) * POR_PAGINA
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: perfil } = await supabase
@@ -22,15 +32,23 @@ export default async function ComprasPage() {
       .order('nombre'),
     supabase
       .from('compras')
-      .select('id, fecha_pedido, condicion, fecha_limite_pago, pagado, total, documento, proveedores(razon_social)')
+      .select(
+        'id, fecha_pedido, condicion, fecha_limite_pago, pagado, total, documento, proveedores(razon_social)',
+        { count: 'exact' },
+      )
       .order('fecha_pedido', { ascending: false })
       .order('id', { ascending: false })
-      .limit(50),
+      .range(desde, desde + POR_PAGINA - 1),
     supabase.from('organizaciones').select('id, nombre').single(),
     supabase.from('marcas').select('nombre').order('nombre'),
   ])
 
   const tipos = await cargarTipos(supabase)
+
+  if (comp.error && pagina > 1) redirect('/compras')
+  const totalCompras = comp.count ?? 0
+  const totalPaginas = Math.max(1, Math.ceil(totalCompras / POR_PAGINA))
+  if (pagina > totalPaginas) redirect(`/compras?p=${totalPaginas}`)
 
   const productos = (prod.data ?? []).map((p: any) => {
     const etiqueta = Array.from(
@@ -78,6 +96,33 @@ export default async function ComprasPage() {
         orgId={(org.data?.id ?? '') as string}
         orgNombre={(org.data?.nombre ?? 'Lubricentro') as string}
       />
+      {totalPaginas > 1 && (
+        <div className="flex items-center justify-between gap-3 text-sm">
+          {pagina > 1 ? (
+            <Link
+              href={`/compras?p=${pagina - 1}`}
+              className="rounded-lg border border-[#17496B] px-4 py-2 font-semibold text-[#FFC107] hover:bg-[#09243B]"
+            >
+              ← Más recientes
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="text-[#9FB3C8]">
+            Página {pagina} de {totalPaginas} · {totalCompras} compras
+          </span>
+          {pagina < totalPaginas ? (
+            <Link
+              href={`/compras?p=${pagina + 1}`}
+              className="rounded-lg border border-[#17496B] px-4 py-2 font-semibold text-[#FFC107] hover:bg-[#09243B]"
+            >
+              Anteriores →
+            </Link>
+          ) : (
+            <span />
+          )}
+        </div>
+      )}
     </div>
   )
 }

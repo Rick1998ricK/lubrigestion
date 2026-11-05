@@ -22,6 +22,7 @@ export default async function KardexPage() {
       id: p.id as number,
       etiqueta,
       busqueda: [etiqueta, p.ean].filter(Boolean).join(' ').toLowerCase(),
+      marca: (p.marcas?.nombre ?? '') as string,
     }
   })
 

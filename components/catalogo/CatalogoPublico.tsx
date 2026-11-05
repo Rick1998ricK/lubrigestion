@@ -37,9 +37,18 @@ export default function CatalogoPublico({
 }) {
   const [q, setQ] = useState('')
   const [tipo, setTipo] = useState('')
+  const [marca, setMarca] = useState('')
 
   const tipos = useMemo(
     () => Array.from(new Set(productos.map((p) => p.tipo_nombre ?? p.tipo))),
+    [productos],
+  )
+
+  const marcas = useMemo(
+    () =>
+      Array.from(new Set(productos.map((p) => p.marca).filter((m): m is string => !!m))).sort((a, b) =>
+        a.localeCompare(b),
+      ),
     [productos],
   )
 
@@ -47,6 +56,7 @@ export default function CatalogoPublico({
     const palabras = q.toLowerCase().split(/\s+/).filter(Boolean)
     return productos.filter((p) => {
       if (tipo && (p.tipo_nombre ?? p.tipo) !== tipo) return false
+      if (marca && p.marca !== marca) return false
       if (palabras.length === 0) return true
       const texto = [
         p.nombre, p.marca, p.viscosidad, p.codigo, p.presentacion,
@@ -54,7 +64,7 @@ export default function CatalogoPublico({
       ].filter(Boolean).join(' ').toLowerCase()
       return palabras.every((w) => texto.includes(w))
     })
-  }, [productos, q, tipo])
+  }, [productos, q, tipo, marca])
 
   const chip = (activo: boolean) =>
     `rounded-full border px-3 py-1.5 text-sm font-semibold ${
@@ -72,14 +82,29 @@ export default function CatalogoPublico({
         <h1 className="font-display text-4xl uppercase tracking-wide text-[#F1F5F9] md:text-5xl">{org}</h1>
       </header>
 
-      <div className="relative max-w-xl">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9FB3C8]" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar por nombre, marca, código o vehículo"
-          className="w-full rounded-lg border border-[#17496B] bg-[#09243B] py-2.5 pl-9 pr-3 text-base text-[#F1F5F9] outline-none focus:border-[#FFC107] md:text-sm"
-        />
+      <div className="flex flex-wrap gap-3">
+        <div className="relative min-w-[240px] max-w-xl flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9FB3C8]" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por nombre, marca, código o vehículo"
+            className="w-full rounded-lg border border-[#17496B] bg-[#09243B] py-2.5 pl-9 pr-3 text-base text-[#F1F5F9] outline-none focus:border-[#FFC107] md:text-sm"
+          />
+        </div>
+        {marcas.length > 1 && (
+          <select
+            value={marca}
+            onChange={(e) => setMarca(e.target.value)}
+            aria-label="Filtrar por marca"
+            className="rounded-lg border border-[#17496B] bg-[#09243B] px-3 py-2.5 text-base text-[#F1F5F9] outline-none focus:border-[#FFC107] md:text-sm"
+          >
+            <option value="">Todas las marcas</option>
+            {marcas.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {tipos.length > 1 && (

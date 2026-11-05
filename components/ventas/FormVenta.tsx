@@ -1,7 +1,7 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, MessageCircle, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, Download, MessageCircle, Plus, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { ResumenVenta } from './tipos'
 import PanelResultado from './PanelResultado'
@@ -104,6 +104,42 @@ async function descargarPdf(r: ResumenVenta) {
   URL.revokeObjectURL(url)
 }
 
+function Seccion({
+  titulo,
+  resumen,
+  abierto,
+  onToggle,
+  children,
+}: {
+  titulo: string
+  resumen?: string
+  abierto: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <section className="rounded-xl border border-borde bg-tarjeta">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={abierto}
+        className="flex w-full items-center justify-between gap-3 p-5 text-left"
+      >
+        <div className="min-w-0">
+          <h2 className="font-display text-2xl font-semibold">{titulo}</h2>
+          {!abierto && resumen && <p className="mt-0.5 truncate text-sm text-suave">{resumen}</p>}
+        </div>
+        <ChevronDown
+          size={22}
+          aria-hidden="true"
+          className={`shrink-0 text-suave transition-transform ${abierto ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <div className={abierto ? 'px-5 pb-5' : 'hidden'}>{children}</div>
+    </section>
+  )
+}
+
 export default function FormVenta({
   productos,
   servicios,
@@ -125,6 +161,19 @@ export default function FormVenta({
   const [med, setMed] = useState(MED_VACIO)
   const [fotos, setFotos] = useState<FotoLocal[]>([])
 
+  const formRef = useRef<HTMLFormElement>(null)
+  const [abierto, setAbierto] = useState({ cliente: true, ficha: false })
+  const [resCliente, setResCliente] = useState('')
+
+  function alternar(s: 'cliente' | 'ficha') {
+    if (s === 'cliente' && formRef.current) {
+      const d = new FormData(formRef.current)
+      const t = (n: string) => String(d.get(n) ?? '').trim()
+      setResCliente([t('nombres'), t('placa').toUpperCase(), t('modelo')].filter(Boolean).join(' · '))
+    }
+    setAbierto((a) => ({ ...a, [s]: !a[s] }))
+  }
+
   useEffect(() => {
     setFecha(new Date().toLocaleDateString('en-CA'))
   }, [])
@@ -141,6 +190,16 @@ export default function FormVenta({
     const l = lineas.find((x) => x.prodTipo === tipo)
     return l ? [l.marca, l.codigo].filter(Boolean).join(' ') : ''
   }
+
+  const nMed = MEDICIONES.filter((d) => med[d.campo].estado !== 'no_revisado').length
+  const resFicha =
+    [
+      lubricante ? `Aceite: ${[lubricante.marca, lubricante.codigo].filter(Boolean).join(' ')}` : '',
+      nMed ? `${nMed} medición(es)` : '',
+      fotos.length ? `${fotos.length} foto(s)` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'Opcional · se completa sola con los productos de la venta'
 
   function agregarProducto(id: number | '') {
     if (id === '') return
@@ -347,6 +406,8 @@ export default function FormVenta({
     })
     form.reset()
     setMed(MED_VACIO)
+    setAbierto({ cliente: true, ficha: false })
+    setResCliente('')
     setFotos([])
     setLineas([])
     setFecha(new Date().toLocaleDateString('en-CA'))
@@ -356,10 +417,19 @@ export default function FormVenta({
   const wa = resultado ? enlaceWhatsApp(resultado) : null
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
-      <div className="space-y-6">
-        <section className="rounded-xl border border-borde bg-tarjeta p-5">
-          <h2 className="mb-4 font-display text-2xl font-semibold">Cliente y vehículo</h2>
+    <form
+      ref={formRef}
+      onSubmit={onSubmit}
+      onInvalidCapture={() => setAbierto((a) => ({ ...a, cliente: true }))}
+      className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start"
+    >
+      <div className="space-y-4">
+        <Seccion
+          titulo="Cliente y vehículo"
+          resumen={resCliente || 'Datos del cliente, placa y kilometraje'}
+          abierto={abierto.cliente}
+          onToggle={() => alternar('cliente')}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <BuscadorCliente />
             <div className="space-y-1.5">
@@ -385,7 +455,7 @@ export default function FormVenta({
             </div>
             <div className="space-y-1.5">
               <label htmlFor="placa" className={etiqueta}>Placa</label>
-              <input id="placa" name="placa" required placeholder="ABC-123" className={`${campo} uppercase`} />
+              <input id="placa" name="placa" placeholder="ABC-123 (opcional)" className={`${campo} uppercase`} />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="km_actual" className={etiqueta}>Kilometraje actual</label>
@@ -396,11 +466,21 @@ export default function FormVenta({
               <input id="km_proximo" name="km_proximo" type="number" min={0} className={campo} />
             </div>
           </div>
-        </section>
+          <div className="mt-4 flex justify-end">
+            <button type="button" onClick={() => alternar('cliente')}
+              className="text-sm font-semibold text-acento hover:underline">
+              Listo, continuar →
+            </button>
+          </div>
+        </Seccion>
 
-        <section className="rounded-xl border border-borde bg-tarjeta p-5">
-          <h2 className="font-display text-2xl font-semibold">Ficha de mantenimiento</h2>
-          <p className="mb-4 mt-1 text-sm text-suave">
+        <Seccion
+          titulo="Ficha de mantenimiento"
+          resumen={resFicha}
+          abierto={abierto.ficha}
+          onToggle={() => alternar('ficha')}
+        >
+          <p className="mb-4 text-sm text-suave">
             Si dejas un campo vacío se guarda lo que ves en gris: el producto que agregaste a la venta, o «{NO_CAMBIO}».
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -446,17 +526,8 @@ export default function FormVenta({
             <div className="space-y-1.5 sm:col-span-2">
               <FotosVehiculo fotos={fotos} onChange={setFotos} />
             </div>
-            <div className="space-y-1.5">
-              <label htmlFor="medio_pago" className={etiqueta}>Medio de pago</label>
-              <select id="medio_pago" name="medio_pago" defaultValue="efectivo" className={campo}>
-                <option value="efectivo">Efectivo</option>
-                <option value="yape_plin">Yape / Plin</option>
-                <option value="transferencia">Transferencia</option>
-                <option value="tarjeta">Tarjeta</option>
-              </select>
-            </div>
           </div>
-        </section>
+        </Seccion>
       </div>
 
       <aside className="space-y-4 rounded-xl border border-borde bg-tarjeta p-5 xl:sticky xl:top-6">
@@ -566,6 +637,16 @@ export default function FormVenta({
             </span>
           </div>
         )}
+
+        <div className="space-y-1.5">
+          <label htmlFor="medio_pago" className={etiqueta}>Medio de pago</label>
+          <select id="medio_pago" name="medio_pago" defaultValue="efectivo" className={campo}>
+            <option value="efectivo">Efectivo</option>
+            <option value="yape_plin">Yape / Plin</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="tarjeta">Tarjeta</option>
+          </select>
+        </div>
 
         {error && <p className="text-sm text-peligro">{error}</p>}
 
