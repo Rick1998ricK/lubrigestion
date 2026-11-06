@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ClipboardCheck, Tags, Truck } from 'lucide-react'
+import { ClipboardCheck, Ruler, Tags, Truck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { minimoDe, resumenAtributos, textoAtributos } from '@/lib/campos-producto'
 import TablaStock, { type FilaStock } from '@/components/inventario/TablaStock'
@@ -75,12 +75,19 @@ export default async function InventarioPage() {
               >
                 <Tags size={18} /> Tipos
               </Link>
+              <Link
+                href="/inventario/presentaciones"
+                className="inline-flex items-center gap-2 rounded-lg border border-borde bg-tarjeta px-4 py-2.5 text-sm font-semibold hover:border-acento"
+              >
+                <Ruler size={18} /> Presentaciones
+              </Link>
             <Link
               href="/compras"
               className="inline-flex items-center gap-2 rounded-lg bg-acento px-4 py-2.5 text-sm font-bold text-fondo"
             >
               <Truck size={18} /> Ingresar mercadería
             </Link>
+
           </div>
         )}
       </header>

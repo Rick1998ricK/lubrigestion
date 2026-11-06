@@ -1,6 +1,7 @@
 'use client'
 
 import { configDeTipo, type DatosExtra } from '@/lib/campos-producto'
+import { ordenarPresentaciones, usePresentaciones } from '@/lib/presentaciones'
 
 const INPUT =
   'w-full rounded-lg border border-[#17496B] bg-[#061626] px-3 py-2 text-base text-[#F1F5F9] outline-none focus:border-[#FFC107] md:text-sm'
@@ -20,6 +21,14 @@ export default function CamposProducto({
   claseLabel?: string
 }) {
   const cfg = configDeTipo(tipo)
+
+  const guardadas = usePresentaciones()
+  // Solo los tipos que se miden en ml / L reciben las presentaciones guardadas
+  const esLiquido = cfg.presentaciones.some((p) => /\b(ml|l)\b/i.test(p))
+  const presentaciones = esLiquido
+    ? ordenarPresentaciones(Array.from(new Set([...cfg.presentaciones, ...guardadas])))
+    : cfg.presentaciones
+
   const idPres = `presentaciones-${tipo}`
 
   function set<K extends keyof DatosExtra>(k: K, v: DatosExtra[K]) {
@@ -59,10 +68,10 @@ export default function CamposProducto({
             onChange={(e) => set('presentacion', e.target.value)}
           >
             <option value="">—</option>
-            {valor.presentacion && !cfg.presentaciones.includes(valor.presentacion) && (
+            {valor.presentacion && !presentaciones.includes(valor.presentacion) && (
               <option value={valor.presentacion}>{valor.presentacion}</option>
             )}
-            {cfg.presentaciones.map((p) => <option key={p} value={p}>{p}</option>)}
+            {presentaciones.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         ) : (
           <>
@@ -71,10 +80,10 @@ export default function CamposProducto({
               list={idPres}
               value={valor.presentacion}
               onChange={(e) => set('presentacion', e.target.value)}
-              placeholder={cfg.presentaciones[0]}
+              placeholder={presentaciones[0]}
             />
             <datalist id={idPres}>
-              {cfg.presentaciones.map((p) => <option key={p} value={p} />)}
+              {presentaciones.map((p) => <option key={p} value={p} />)}
             </datalist>
           </>
         )}
