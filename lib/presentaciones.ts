@@ -38,7 +38,11 @@ export function usePresentaciones(): string[] {
     createClient()
       .from('presentaciones')
       .select('nombre')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('presentaciones:', error.message)
+          return // no se guarda en caché: se reintenta la próxima vez
+        }
         cache = (data ?? []).map((r: { nombre: string }) => r.nombre)
         if (vivo) setLista(cache)
       })

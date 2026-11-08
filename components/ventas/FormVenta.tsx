@@ -10,6 +10,8 @@ import BuscadorProducto from '@/components/productos/BuscadorProducto'
 import MedidorEstado from './MedidorEstado'
 import FotosVehiculo, { type FotoLocal } from './FotosVehiculo'
 import { MEDICIONES, estadoDe, type MedicionResumen } from '@/lib/mediciones'
+import { textoAtributos } from '@/lib/campos-producto'
+import { filtrarPorVehiculo, parsearVehiculos } from '@/lib/compatibilidad'
 
 export type ProductoVenta = {
   id: number
@@ -24,6 +26,7 @@ export type ProductoVenta = {
   codigo?: string | null
   aplicacion?: string | null
   precio_compra?: number | null
+  atributos?: Record<string, unknown> | null
 }
 export type ServicioVenta = { id: number; nombre: string; precio_base: number; categoria?: string | null }
 
@@ -164,6 +167,7 @@ export default function FormVenta({
   const formRef = useRef<HTMLFormElement>(null)
   const [abierto, setAbierto] = useState({ cliente: true, ficha: false })
   const [resCliente, setResCliente] = useState('')
+  const [veh, setVeh] = useState('')
 
   function alternar(s: 'cliente' | 'ficha') {
     if (s === 'cliente' && formRef.current) {
@@ -258,14 +262,27 @@ export default function FormVenta({
         ]
           .filter(Boolean)
           .join(' · ')
+        const vehiculos = parsearVehiculos(p.atributos?.vehiculos)
+        const base = [etiqueta, p.ean, p.codigo, p.aplicacion, textoAtributos(p.atributos, false)]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
         return {
           id: p.id,
           etiqueta,
-          busqueda: [etiqueta, p.ean, p.codigo, p.aplicacion].filter(Boolean).join(' ').toLowerCase(),
+          base,
+          busqueda: [base, ...vehiculos.map((v) => v.texto)].join(' '),
+          vehiculos,
+          detalle: vehiculos.map((v) => v.original).join(' · '),
         }
       }),
     [productos],
   )  
+
+  const sugeridos = useMemo(
+    () => filtrarPorVehiculo(opcionesProducto.filter((o) => o.vehiculos.length > 0), veh),
+    [opcionesProducto, veh],
+  )
 
   function cambiar(key: string, patch: Partial<Linea>) {
     setLineas((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)))
@@ -408,6 +425,7 @@ export default function FormVenta({
     setMed(MED_VACIO)
     setAbierto({ cliente: true, ficha: false })
     setResCliente('')
+    setVeh('')
     setFotos([])
     setLineas([])
     setFecha(new Date().toLocaleDateString('en-CA'))
@@ -420,6 +438,10 @@ export default function FormVenta({
     <form
       ref={formRef}
       onSubmit={onSubmit}
+      onInput={(e) => {
+        const t = e.target as HTMLInputElement
+        if (t.name === 'modelo') setVeh(t.value)
+      }}
       onInvalidCapture={() => setAbierto((a) => ({ ...a, cliente: true }))}
       className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start"
     >
@@ -532,6 +554,28 @@ export default function FormVenta({
 
       <aside className="space-y-4 rounded-xl border border-borde bg-tarjeta p-5 xl:sticky xl:top-6">
         <h2 className="font-display text-2xl font-semibold">Detalle de la venta</h2>
+
+        {sugeridos.length > 0 && (
+          <div className="space-y-2 rounded-lg border border-acento/40 bg-fondo p-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-suave">
+              Compatibles con «{veh.trim()}»
+            </p>
+            <ul className="space-y-1.5">
+              {sugeridos.slice(0, 8).map((s) => (
+                <li key={s.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="min-w-0 truncate">{s.etiqueta}</span>
+                  <button
+                    type="button"
+                    onClick={() => agregarProducto(s.id)}
+                    className="shrink-0 rounded-md bg-acento px-2 py-1 text-xs font-bold text-fondo"
+                  >
+                    + Agregar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="space-y-3">
           <div>

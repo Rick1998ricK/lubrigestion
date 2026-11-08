@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import FormCompra from '@/components/compras/FormCompra'
 import ListaCompras from '@/components/compras/ListaCompras'
 import { cargarTipos } from '@/lib/tipos'
+import { textoAtributos } from '@/lib/campos-producto'
+import { parsearVehiculos } from '@/lib/compatibilidad'
 
 const POR_PAGINA = 10
 
@@ -27,13 +29,13 @@ export default async function ComprasPage({
     supabase
       .from('productos')
       .select(
-        'id, nombre, viscosidad_codigo, codigo, codigo_tienda, ean, presentacion, aplicacion, precio_compra, precio_venta, marcas(nombre)',
+        'id, nombre, viscosidad_codigo, codigo, codigo_tienda, ean, presentacion, aplicacion, atributos, precio_compra, precio_venta, marcas(nombre)',
       )
       .order('nombre'),
     supabase
       .from('compras')
       .select(
-        'id, fecha_pedido, condicion, fecha_limite_pago, pagado, total, documento, proveedores(razon_social)',
+        'id, nombre, viscosidad_codigo, codigo, codigo_tienda, ean, presentacion, aplicacion, atributos, precio_compra, precio_venta, marcas(nombre)',
         { count: 'exact' },
       )
       .order('fecha_pedido', { ascending: false })
@@ -56,10 +58,18 @@ export default async function ComprasPage({
         [p.codigo_tienda, p.marcas?.nombre, p.nombre, p.viscosidad_codigo, p.codigo, p.presentacion].filter(Boolean),
       ),
     ).join(' · ')
+    const veh = parsearVehiculos(p.atributos?.vehiculos)
+    const base = [etiqueta, p.ean, p.aplicacion, textoAtributos(p.atributos, false)]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
     return {
       id: p.id as number,
       etiqueta,
-      busqueda: [etiqueta, p.ean, p.aplicacion].filter(Boolean).join(' ').toLowerCase(),
+      base,
+      busqueda: [base, ...veh.map((v) => v.texto)].join(' '),
+      vehiculos: veh,
+      detalle: veh.map((v) => v.original).join(' · '),
       precio_compra: Number(p.precio_compra),
       precio_venta: Number(p.precio_venta),
     }

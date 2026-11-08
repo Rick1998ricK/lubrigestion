@@ -12,9 +12,10 @@ import {
   type DatosExtra,
 } from '@/lib/campos-producto'
 import CamposProducto from '@/components/productos/CamposProducto'
-import BuscadorProducto from '@/components/productos/BuscadorProducto'
+import BuscadorProducto, { type OpcionProducto } from '@/components/productos/BuscadorProducto'
+import { parsearVehiculos } from '@/lib/compatibilidad'
 
-type Prov = { id: number; razon_social: string }
+type Prod = OpcionProducto & { precio_compra: number; precio_venta: number }
 type Prod = {
   id: number
   etiqueta: string
@@ -141,10 +142,18 @@ export default function FormCompra({
       .join(' · ')
     const busqueda = [etiqueta, extra.ean].filter(Boolean).join(' ').toLowerCase()
 
+    const veh = parsearVehiculos(extra.atributos.vehiculos)
     setProductosLista((ps) =>
       ps.some((p) => p.id === id)
         ? ps
-        : [...ps, { id, etiqueta, busqueda, precio_compra: precio, precio_venta: venta }],
+        : [
+            ...ps,
+            {
+              id, etiqueta, busqueda, base: busqueda, vehiculos: veh,
+              detalle: veh.map((v) => v.original).join(' · '),
+              precio_compra: precio, precio_venta: venta,
+            },
+          ],
     )
     setLineas((ls) => {
       const linea: Linea = { producto_id: id, cantidad: 1, precio }

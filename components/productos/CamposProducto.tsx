@@ -88,13 +88,20 @@ export default function CamposProducto({
           </>
         )}
       </div>
-
       {cfg.campos.map((c) => {
         const actual = valor.atributos[c.clave] ?? ''
         return (
-          <div key={c.clave}>
+          <div key={c.clave} className={c.multilinea ? 'md:col-span-3' : undefined}>
             <span className={claseLabel}>{c.etiqueta}</span>
-            {c.opciones ? (
+            {c.multilinea ? (
+              <textarea
+                className={claseInput}
+                rows={4}
+                value={actual}
+                onChange={(e) => setAttr(c.clave, e.target.value)}
+                placeholder={c.placeholder}
+              />
+            ) : c.opciones ? (
               <select
                 className={claseInput}
                 value={actual}

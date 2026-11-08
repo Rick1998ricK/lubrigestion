@@ -20,6 +20,7 @@ export default async function VentasPage() {
       .select('id, nombre, precio_base, categoria')
       .eq('activo', true)
       .order('nombre'),
+      .select('id, nombre, tipo, marca, viscosidad_codigo, stock, precio_venta, ean, codigo_tienda, codigo, aplicacion, atributos')
   ])
 
   // Solo el administrador recibe los costos
@@ -45,6 +46,7 @@ export default async function VentasPage() {
     codigo_tienda: p.codigo_tienda ?? null,
     codigo: p.codigo ?? null,
     aplicacion: p.aplicacion ?? null,
+    atributos: (p.atributos ?? null) as Record<string, unknown> | null,
   }))
 
   const servicios: ServicioVenta[] = (servRes.data ?? []).map((s) => ({

@@ -2,8 +2,16 @@
 
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
+import { coincideProducto, type Compat } from '@/lib/compatibilidad'
 
-export type OpcionProducto = { id: number; etiqueta: string; busqueda: string }
+export type OpcionProducto = {
+  id: number
+  etiqueta: string
+  busqueda: string
+  base?: string // búsqueda sin los vehículos (para comparar línea por línea)
+  vehiculos?: Compat[]
+  detalle?: string // vehículos compatibles, para mostrar bajo el nombre
+}
 
 export default function BuscadorProducto({
   opciones,
@@ -27,9 +35,13 @@ export default function BuscadorProducto({
   const resultados = useMemo(() => {
     const palabras = texto.toLowerCase().split(/\s+/).filter(Boolean)
     const base = palabras.length
-      ? opciones.filter((o) => palabras.every((p) => o.busqueda.includes(p)))
+      ? opciones.filter((o) =>
+          o.vehiculos?.length
+            ? coincideProducto(o, palabras)
+            : palabras.every((p) => o.busqueda.includes(p)),
+        )
       : opciones
-    return base.slice(0, 8)
+    return base.slice(0, 10)
   }, [texto, opciones])
 
   function elegir(o: OpcionProducto) {
@@ -76,7 +88,7 @@ export default function BuscadorProducto({
         }}
       />
       {abierto && (
-        <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-[#17496B] bg-[#09243B] shadow-lg">
+        <ul className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-[#17496B] bg-[#09243B] shadow-lg">
           {resultados.length === 0 && (
             <li className="px-3 py-2 text-sm text-[#9FB3C8]">Sin resultados</li>
           )}
@@ -93,6 +105,9 @@ export default function BuscadorProducto({
                 }`}
               >
                 {o.etiqueta}
+                {o.detalle && (
+                  <span className="mt-0.5 block truncate text-xs text-[#9FB3C8]">Sirve para: {o.detalle}</span>
+                )}
               </button>
             </li>
           ))}

@@ -5,6 +5,8 @@ export type CampoDef = {
   etiqueta: string
   opciones?: string[] // si existe, se muestra como lista desplegable
   placeholder?: string
+  multilinea?: boolean // cuadro de texto grande
+  enResumen?: boolean // false = no se muestra en tarjetas ni tablas
 }
 
 export type ConfigTipo = {
@@ -25,7 +27,18 @@ function filtro(placeholderNombre: string): ConfigTipo {
     placeholderNombre,
     presentaciones: UNIDADES,
     campos: [
-      { clave: 'codigo_alterno', etiqueta: 'Código equivalente / alterno', placeholder: 'Ej. W712/75' },
+      {
+        clave: 'codigo_alterno',
+        etiqueta: 'Códigos compatibles (separados por coma)',
+        placeholder: 'Ej. W712/75, PH5796, C-1234',
+      },
+      {
+        clave: 'vehiculos',
+        etiqueta: 'Vehículos compatibles (uno por línea: marca, modelo y años)',
+        placeholder: 'Toyota Hilux 2005-2015\nHyundai Accent 2012-2018',
+        multilinea: true,
+        enResumen: false,
+      },
     ],
   }
 }
@@ -110,14 +123,16 @@ export const CAMPOS_POR_TIPO: Record<string, ConfigTipo> = {
     presentaciones: UNIDADES,
     campos: [
       {
-        clave: 'subcategoria',
-        etiqueta: 'Subcategoría',
-        opciones: ['Frenos', 'Correas y fajas', 'Bujías', 'Suspensión', 'Embrague', 'Refrigeración', 'Escobillas', 'Otro'],
+        clave: 'codigo_alterno',
+        etiqueta: 'Códigos compatibles (separados por coma)',
+        placeholder: 'Ej. 04465-0K240, DB1234',
       },
       {
-        clave: 'posicion',
-        etiqueta: 'Posición',
-        opciones: ['Delantero', 'Posterior', 'Izquierdo', 'Derecho', 'No aplica'],
+        clave: 'vehiculos',
+        etiqueta: 'Vehículos compatibles (uno por línea: marca, modelo y años)',
+        placeholder: 'Toyota Hilux 2005-2015',
+        multilinea: true,
+        enResumen: false,
       },
     ],
   },
@@ -165,7 +180,8 @@ export function limpiarAtributos(a: Record<string, string>) {
 export function resumenAtributos(tipo: string, atributos: Record<string, unknown> | null | undefined) {
   if (!atributos) return ''
   return configDeTipo(tipo)
-    .campos.map((c) => atributos[c.clave])
+    .campos.filter((c) => c.enResumen !== false)
+    .map((c) => atributos[c.clave])
     .filter((v) => typeof v === 'string' && v)
     .join(' · ')
 }
@@ -176,9 +192,10 @@ export function minimoDe(stockMinimo: number | null | undefined) {
 }
 
 // Todos los valores de los atributos en un solo texto (para buscar)
-export function textoAtributos(atributos: Record<string, unknown> | null | undefined) {
+export function textoAtributos(atributos: Record<string, unknown> | null | undefined, incluirVehiculos = true) {
   if (!atributos) return ''
-  return Object.values(atributos)
-    .filter((v) => typeof v === 'string' && v)
+  return Object.entries(atributos)
+    .filter(([k, v]) => (incluirVehiculos || k !== 'vehiculos') && typeof v === 'string' && v)
+    .map(([, v]) => v as string)
     .join(' ')
 }
