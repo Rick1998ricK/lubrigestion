@@ -12,7 +12,7 @@ export default async function VentasPage() {
   const [prodRes, servRes] = await Promise.all([
     supabase
       .from('productos_publico')
-      .select('id, nombre, tipo, marca, viscosidad_codigo, stock, precio_venta, ean, codigo_tienda, codigo, aplicacion')
+      .select('id, nombre, tipo, marca, viscosidad_codigo, stock, precio_venta, ean, codigo_tienda, codigo, aplicacion, atributos')
       .gt('stock', 0)
       .order('nombre'),
     supabase
@@ -20,7 +20,6 @@ export default async function VentasPage() {
       .select('id, nombre, precio_base, categoria')
       .eq('activo', true)
       .order('nombre'),
-      .select('id, nombre, tipo, marca, viscosidad_codigo, stock, precio_venta, ean, codigo_tienda, codigo, aplicacion, atributos')
   ])
 
   // Solo el administrador recibe los costos
