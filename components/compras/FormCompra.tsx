@@ -15,7 +15,9 @@ import CamposProducto from '@/components/productos/CamposProducto'
 import BuscadorProducto, { type OpcionProducto } from '@/components/productos/BuscadorProducto'
 import { parsearVehiculos } from '@/lib/compatibilidad'
 
+type Prov = { id: number; razon_social: string }
 type Prod = OpcionProducto & { precio_compra: number; precio_venta: number }
+type Linea = { producto_id: number | ''; cantidad: number; precio: number }
 type Prod = {
   id: number
   etiqueta: string
