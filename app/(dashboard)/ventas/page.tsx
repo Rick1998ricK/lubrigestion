@@ -12,7 +12,7 @@ export default async function VentasPage() {
   const [prodRes, servRes] = await Promise.all([
     supabase
       .from('productos_publico')
-      .select('id, nombre, tipo, marca, viscosidad_codigo, stock, precio_venta, ean, codigo_tienda, codigo, aplicacion, atributos')
+      .select('id, nombre, tipo, marca, viscosidad_codigo, stock, precio_venta, ean, codigo_tienda, codigo, aplicacion, atributos, presentacion')
       .gt('stock', 0)
       .order('nombre'),
     supabase
@@ -46,6 +46,7 @@ export default async function VentasPage() {
     codigo: p.codigo ?? null,
     aplicacion: p.aplicacion ?? null,
     atributos: (p.atributos ?? null) as Record<string, unknown> | null,
+    presentacion: p.presentacion
   }))
 
   const servicios: ServicioVenta[] = (servRes.data ?? []).map((s) => ({

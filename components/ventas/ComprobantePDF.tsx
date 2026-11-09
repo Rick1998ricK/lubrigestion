@@ -120,7 +120,12 @@ export default function ComprobantePDF({ r }: { r: ResumenVenta }) {
         </View>
         {r.lineas.map((l, i) => (
           <View key={i} style={s.tr} wrap={false}>
-            <Text style={s.cDesc}>{l.nombre}{l.bonificacion ? ' (bonificación)' : ''}</Text>
+            <View style={s.cDesc}>
+              <Text>{l.nombre}{l.bonificacion ? ' (bonificación)' : ''}</Text>
+              {l.detalle ? (
+                <Text style={{ fontSize: 8, color: C.suave, marginTop: 2 }}>{l.detalle}</Text>
+              ) : null}
+            </View>
             <Text style={s.cCant}>{l.cantidad}</Text>
             <Text style={s.cPrecio}>{l.bonificacion ? '—' : soles(l.precio)}</Text>
             <Text style={s.cSub}>{soles(l.bonificacion ? 0 : l.precio * l.cantidad)}</Text>

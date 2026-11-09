@@ -19,6 +19,7 @@ export type ResumenVenta = {
   fotos?: string[]
   lineas: {
     nombre: string
+    detalle?: string
     tipo: 'producto' | 'servicio'
     cantidad: number
     precio: number

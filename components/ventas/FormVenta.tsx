@@ -27,6 +27,7 @@ export type ProductoVenta = {
   aplicacion?: string | null
   precio_compra?: number | null
   atributos?: Record<string, unknown> | null
+  presentacion?: string | null
 }
 export type ServicioVenta = { id: number; nombre: string; precio_base: number; categoria?: string | null }
 
@@ -43,6 +44,7 @@ type Linea = {
   prodTipo?: string
   marca?: string | null
   codigo?: string | null
+  detalle?: string
 }
 
 type Resultado = {
@@ -78,6 +80,69 @@ function margenLinea(l: { costo?: number | null; precio: number; cantidad: numbe
   const pv = l.bonificacion ? 0 : l.precio
   const unidad = pv - l.costo
   return { total: unidad * l.cantidad, pct: pv > 0 ? (unidad / pv) * 100 : null }
+}
+function presentacionDe(p: { presentacion?: string | null }) {
+  return (p.presentacion ?? '').trim()
+}
+
+// Texto que identifica el producto en la venta y el PDF: grado, presentación, códigos, etc.
+function detalleProducto(p: ProductoVenta) {
+  const extra = Object.entries(p.atributos ?? {})
+    .filter(([k]) => k !== 'vehiculos')
+    .map(([, v]) => (typeof v === 'string' || typeof v === 'number' ? String(v) : ''))
+  const piezas = [p.marca, p.viscosidad_codigo, presentacionDe(p), p.codigo, p.aplicacion, ...extra]
+  const vistos = new Set<string>()
+  const nombre = p.nombre.toLowerCase()
+  return piezas
+    .map((x) => String(x ?? '').trim())
+    .filter((x) => {
+      const k = x.toLowerCase()
+      if (!x || vistos.has(k) || nombre.includes(k)) return false
+      vistos.add(k)
+      return true
+    })
+    .join(' · ')
+    .slice(0, 160)
+}
+
+function CantidadInput({
+  valor,
+  max,
+  onCambio,
+}: {
+  valor: number
+  max?: number
+  onCambio: (n: number) => void
+}) {
+  const [txt, setTxt] = useState(String(valor))
+  useEffect(() => {
+    setTxt(String(valor))
+  }, [valor])
+  return (
+    <input
+      type="number"
+      min={1}
+      max={max}
+      value={txt}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => {
+        const t = e.target.value
+        if (t === '') {
+          setTxt('')
+          return
+        }
+        let n = Math.floor(Number(t))
+        if (!Number.isFinite(n) || n < 1) return
+        if (max && n > max) n = max
+        setTxt(String(n))
+        onCambio(n)
+      }}
+      onBlur={() => {
+        if (txt === '') setTxt(String(valor))
+      }}
+      className="w-16 rounded-lg border border-borde bg-fondo px-2 py-1.5 text-texto outline-none focus-visible:ring-2 focus-visible:ring-acento"
+    />
+  )
 }
 
 function enlaceWhatsApp(r: Resultado) {
@@ -223,6 +288,7 @@ export default function FormVenta({
           precio: p.precio_venta, bonificacion: false, stockMax: p.stock,
             prodTipo: p.tipo, marca: p.marca, codigo: p.viscosidad_codigo,
             costo: p.precio_compra ?? null,
+            detalle: detalleProducto(p),
         },
       ]
     })
@@ -257,6 +323,7 @@ export default function FormVenta({
           p.marca,
           p.nombre,
           p.viscosidad_codigo,
+          presentacionDe(p),
           `${p.stock} uds`,
           soles(p.precio_venta),
         ]
@@ -414,6 +481,7 @@ export default function FormVenta({
         fotos: fotos.map((f) => f.dataUrl),
         lineas: lineas.map((l) => ({
           nombre: l.nombre,
+          detalle: l.detalle ?? '',
           tipo: l.tipo,
           cantidad: l.cantidad,
           precio: l.precio,
@@ -619,7 +687,10 @@ export default function FormVenta({
             {lineas.map((l) => (
               <li key={l.key} className="space-y-2 py-3">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold leading-tight">{l.nombre}</p>
+                  <div className="min-w-0">
+                    <p className="font-semibold leading-tight">{l.nombre}</p>
+                    {l.detalle && <p className="mt-0.5 text-xs text-suave">{l.detalle}</p>}
+                  </div>
                   <button type="button" onClick={() => setLineas((p) => p.filter((x) => x.key !== l.key))}
                     aria-label={`Quitar ${l.nombre}`} className="text-suave hover:text-peligro">
                     <Trash2 size={18} aria-hidden="true" />
@@ -628,12 +699,8 @@ export default function FormVenta({
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="flex items-center gap-2 text-sm text-suave">
                     Cant.
-                    <input type="number" min={1} max={l.stockMax} value={l.cantidad}
-                      onChange={(e) => {
-                        const n = Math.max(1, Number(e.target.value) || 1)
-                        cambiar(l.key, { cantidad: l.stockMax ? Math.min(n, l.stockMax) : n })
-                      }}
-                      className="w-16 rounded-lg border border-borde bg-fondo px-2 py-1.5 text-texto outline-none focus-visible:ring-2 focus-visible:ring-acento" />
+                    <CantidadInput valor={l.cantidad} max={l.stockMax}
+                      onCambio={(n) => cambiar(l.key, { cantidad: n })} />
                   </label>
                   <label className="flex items-center gap-2 text-sm text-suave">
                     S/
