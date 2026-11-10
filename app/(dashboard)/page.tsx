@@ -72,6 +72,15 @@ export default async function InicioPage() {
   const agotados = bajos.filter((p: any) => p.stock === 0).length
   const lista = (creditos.data ?? []) as any[]
 
+  const { data: filasCredito } = await supabase
+    .from('creditos_pendientes')
+    .select('saldo, cliente_id, fecha_prometida')
+  const totalPorCobrar = (filasCredito ?? []).reduce((s, f: any) => s + Number(f.saldo), 0)
+  const clientesDeben = new Set((filasCredito ?? []).map((f: any) => f.cliente_id)).size
+  const deudasVencidas = (filasCredito ?? []).filter(
+    (f: any) => f.fecha_prometida && f.fecha_prometida < hoy,
+  ).length
+
 
   // Clientes con premio de fidelidad pendiente
   const { data: pend } = await supabase
@@ -100,7 +109,7 @@ export default async function InicioPage() {
       </div>
 
       {/* Indicadores */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <div className={card}>
           <p className="text-xs uppercase tracking-wider text-[#9FB3C8]">Ventas de hoy</p>
           <p className="mt-1 font-display text-3xl text-[#FFC107]">{soles(totalHoy)}</p>
@@ -111,6 +120,17 @@ export default async function InicioPage() {
           <p className="mt-1 font-display text-3xl text-[#FFC107]">{soles(totalMes)}</p>
           <p className="text-xs text-[#9FB3C8]">{ventasMes.length} servicio(s)</p>
         </div>
+
+        <Link href="/creditos" className={card}>
+          <p className="text-xs uppercase tracking-wider text-[#9FB3C8]">Clientes con crédito</p>
+          <p className={`mt-1 font-display text-3xl ${totalPorCobrar > 0 ? 'text-[#FFC107]' : 'text-[#3DDC97]'}`}>
+            {soles(totalPorCobrar)}
+          </p>
+          <p className={`text-xs ${deudasVencidas ? 'text-[#FF6B5E]' : 'text-[#9FB3C8]'}`}>
+            {clientesDeben} cliente(s){deudasVencidas ? ` · ${deudasVencidas} vencida(s)` : ''}
+          </p>
+        </Link>
+
         <Link href="/inventario" className={card}>
           <p className="text-xs uppercase tracking-wider text-[#9FB3C8]">Stock bajo</p>
           <p className={`mt-1 font-display text-3xl ${bajos.length ? 'text-[#FF6B5E]' : 'text-[#3DDC97]'}`}>

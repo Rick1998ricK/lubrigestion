@@ -1,5 +1,6 @@
 'use client'
 
+import { fechaHoraLima } from '@/lib/fechas'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ban } from 'lucide-react'
@@ -72,14 +73,7 @@ export default function HistorialVentas({ ventas, esAdmin }: { ventas: Venta[]; 
                 </p>
                 <p className="text-xs text-[#9FB3C8]">
                   N° {String(v.id).padStart(5, '0')} ·{' '}
-                  {new Date(v.fecha).toLocaleString('es-PE', {
-                    timeZone: 'America/Lima',
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {fechaHoraLima(v.fecha)}
                   {v.vehiculo ? ` · ${v.vehiculo}` : ''}
                 </p>
               </div>

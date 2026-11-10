@@ -17,7 +17,10 @@ type Resultado = {
 
 function llenar(id: string, valor: string) {
   const el = document.getElementById(id) as HTMLInputElement | null
-  if (el) el.value = valor
+  if (el) {
+    el.value = valor
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  }
 }
 
 export default function BuscadorCliente() {

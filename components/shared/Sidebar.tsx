@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   Home, Package, Receipt, Truck, LayoutGrid, BarChart3, Wallet, LogOut, Menu, X,
   Users, Building2, History, Banknote, UserCog, FileSpreadsheet, BookOpen, Wrench,
-  ChevronDown, type LucideIcon,
+  ChevronDown, CreditCard, type LucideIcon,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -24,6 +24,7 @@ const menu: (Item | Grupo)[] = [
       { href: '/ventas', label: 'Nueva venta', icon: Receipt, roles: AMBOS },
       { href: '/ventas/historial', label: 'Historial de ventas', icon: History, roles: AMBOS },
       { href: '/caja', label: 'Caja diaria', icon: Banknote, roles: AMBOS },
+      { href: '/creditos', label: 'Créditos por cobrar', icon: CreditCard, roles: AMBOS },
       { href: '/servicios', label: 'Servicios', icon: Wrench, roles: ADMIN },
     ],
   },

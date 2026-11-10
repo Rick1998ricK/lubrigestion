@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { ResumenVenta } from './tipos'
 import PanelResultado from './PanelResultado'
 import BuscadorCliente from './BuscadorCliente'
+import AlertaDeuda from './AlertaDeuda'
 import BuscadorProducto from '@/components/productos/BuscadorProducto'
 import MedidorEstado from './MedidorEstado'
 import FotosVehiculo, { type FotoLocal } from './FotosVehiculo'
@@ -234,6 +235,8 @@ export default function FormVenta({
   const [abierto, setAbierto] = useState({ cliente: true, ficha: false })
   const [resCliente, setResCliente] = useState('')
   const [veh, setVeh] = useState('')
+  const [medio, setMedio] = useState('efectivo')
+  const [cel, setCel] = useState('')
 
   function alternar(s: 'cliente' | 'ficha') {
     if (s === 'cliente' && formRef.current) {
@@ -368,6 +371,12 @@ export default function FormVenta({
       return
     }
 
+    if (medio === 'credito' && !val('celular')) {
+      setAbierto((a) => ({ ...a, cliente: true }))
+      setError('Para vender a crédito necesitas el celular del cliente')
+      return
+    }
+
     setGuardando(true)
     setError(null)
     setResultado(null)
@@ -391,7 +400,8 @@ export default function FormVenta({
         bateria: val('bateria'), alternador: val('alternador'),
         frenos: val('frenos'), refrigerante: val('refrigerante'),
         comentarios: val('comentarios'),
-        medio_pago: val('medio_pago'),
+        medio_pago: medio,
+        fecha_prometida: val('fecha_prometida'),
       },
       p_items: lineas.map((l) => ({
         tipo: l.tipo, id: l.id, cantidad: l.cantidad, precio: l.precio, bonificacion: l.bonificacion,
@@ -496,6 +506,8 @@ export default function FormVenta({
     setResCliente('')
     setVeh('')
     setFotos([])
+    setMedio('efectivo')
+    setCel('')
     setLineas([])
     setFecha(new Date().toLocaleDateString('en-CA'))
     router.refresh()
@@ -510,6 +522,7 @@ export default function FormVenta({
       onInput={(e) => {
         const t = e.target as HTMLInputElement
         if (t.name === 'modelo') setVeh(t.value)
+        if (t.name === 'celular') setCel(t.value)
       }}
       onInvalidCapture={() => setAbierto((a) => ({ ...a, cliente: true }))}
       className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start"
@@ -623,6 +636,8 @@ export default function FormVenta({
 
       <aside className="space-y-4 rounded-xl border border-borde bg-tarjeta p-5 xl:sticky xl:top-6">
         <h2 className="font-display text-2xl font-semibold">Detalle de la venta</h2>
+
+        <AlertaDeuda celular={cel} />
 
         {sugeridos.length > 0 && (
           <div className="space-y-2 rounded-lg border border-acento/40 bg-fondo p-3">
@@ -752,13 +767,24 @@ export default function FormVenta({
 
         <div className="space-y-1.5">
           <label htmlFor="medio_pago" className={etiqueta}>Medio de pago</label>
-          <select id="medio_pago" name="medio_pago" defaultValue="efectivo" className={campo}>
+          <select id="medio_pago" name="medio_pago" value={medio}
+            onChange={(e) => setMedio(e.target.value)} className={campo}>
             <option value="efectivo">Efectivo</option>
             <option value="yape_plin">Yape / Plin</option>
             <option value="transferencia">Transferencia</option>
             <option value="tarjeta">Tarjeta</option>
+            <option value="credito">Crédito (queda por cobrar)</option>
           </select>
         </div>
+        {medio === 'credito' && (
+          <div className="space-y-1.5 rounded-lg border border-acento/40 bg-fondo p-3">
+            <p className="text-xs text-suave">
+              No suma a la caja hoy: se cobra después desde Créditos. Requiere el celular del cliente.
+            </p>
+            <label htmlFor="fecha_prometida" className={etiqueta}>Fecha en que promete pagar (opcional)</label>
+            <input id="fecha_prometida" name="fecha_prometida" type="date" min={fecha} className={campo} />
+          </div>
+        )}
 
         {error && <p className="text-sm text-peligro">{error}</p>}
 

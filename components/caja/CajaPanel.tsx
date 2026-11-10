@@ -15,6 +15,9 @@ type Resumen = {
   ventas_otros: Record<string, number>
   gastos_efectivo: number
   compras_efectivo: number
+  ventas_credito?: number
+  cobros_efectivo?: number
+  cobros_otros?: Record<string, number>
   esperado: number
 }
 type Hist = {
@@ -63,6 +66,7 @@ export default function CajaPanel({ resumen: r, historial }: { resumen: Resumen;
   const contadoNum = contado === '' ? null : Number(contado)
   const dif = contadoNum == null ? null : contadoNum - r.esperado
   const otros = Object.entries(r.ventas_otros ?? {})
+  const cobrosOtros = Object.entries(r.cobros_otros ?? {})
 
   async function abrir(e: React.FormEvent) {
     e.preventDefault()
@@ -120,18 +124,33 @@ export default function CajaPanel({ resumen: r, historial }: { resumen: Resumen;
             </h2>
             <Linea t="Efectivo inicial" v={r.inicial} />
             <Linea t="Ventas en efectivo" v={r.ventas_efectivo} signo="+" />
+            <Linea t="Cobros de créditos en efectivo" v={r.cobros_efectivo ?? 0} signo="+" />
             <Linea t="Gastos pagados en efectivo" v={r.gastos_efectivo} signo="−" />
             <Linea t="Compras pagadas en efectivo" v={r.compras_efectivo} signo="−" />
             <Linea t="Efectivo esperado en caja" v={r.esperado} fuerte />
-            {otros.length > 0 && (
-              <div className="mt-4 rounded-lg bg-[#061626] p-3 text-sm">
-                <p className="mb-1 text-xs uppercase tracking-wider text-[#9FB3C8]">Cobrado fuera del cajón</p>
+            {(otros.length > 0 || cobrosOtros.length > 0 || (r.ventas_credito ?? 0) > 0) && (
+              <div className="mt-4 space-y-1 rounded-lg bg-[#061626] p-3 text-sm">
+                {(otros.length > 0 || cobrosOtros.length > 0) && (
+                  <p className="mb-1 text-xs uppercase tracking-wider text-[#9FB3C8]">Cobrado fuera del cajón</p>
+                )}
                 {otros.map(([k, v]) => (
                   <div key={k} className="flex justify-between text-[#F1F5F9]">
                     <span>{OTROS[k] ?? k}</span>
                     <span>{soles(Number(v))}</span>
                   </div>
                 ))}
+                {cobrosOtros.map(([k, v]) => (
+                  <div key={`c-${k}`} className="flex justify-between text-[#F1F5F9]">
+                    <span>{OTROS[k] ?? k} (cobro de crédito)</span>
+                    <span>{soles(Number(v))}</span>
+                  </div>
+                ))}
+                {(r.ventas_credito ?? 0) > 0 && (
+                  <div className="flex justify-between border-t border-[#17496B] pt-2 text-[#FFC107]">
+                    <span>Vendido a crédito hoy (no suma a la caja)</span>
+                    <span>{soles(r.ventas_credito ?? 0)}</span>
+                  </div>
+                )}
               </div>
             )}
           </section>

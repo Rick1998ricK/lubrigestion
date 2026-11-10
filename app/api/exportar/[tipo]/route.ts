@@ -12,7 +12,7 @@ const TIPOS: Record<string, string> = {
 }
 const COND: Record<string, string> = { contado: 'Contado', credito: 'Crédito', contra_entrega: 'Contra entrega' }
 const MEDIO: Record<string, string> = {
-  efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta', yape_plin: 'Yape / Plin',
+  efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta', yape_plin: 'Yape / Plin', credito: 'Crédito (por cobrar)',
 }
 const GASTO: Record<string, string> = { alquiler: 'Alquiler', agua: 'Agua', luz: 'Luz', flete: 'Flete', otro: 'Otro' }
 
@@ -270,7 +270,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ tipo: st
 
     // ------------------------------------------------ RESUMEN
     if (tipo === 'resumen') {
-      const [vs, det, gs, cs] = await Promise.all([
+      const [vs, det, gs, cs, pc] = await Promise.all([
         traer((a, b) => supabase.from('ventas').select('id, total, medio_pago').eq('anulada', false)
           .gte('fecha_venta', ini).lt('fecha_venta', fin).order('id').range(a, b)),
         traer((a, b) => supabase.from('detalle_venta')
@@ -279,12 +279,19 @@ export async function GET(req: Request, { params }: { params: Promise<{ tipo: st
           .order('id').range(a, b)),
         traer((a, b) => supabase.from('gastos').select('id, monto').eq('anulado', false).gte('fecha', desde).lte('fecha', hasta).order('id').range(a, b)),
         traer((a, b) => supabase.from('compras').select('id, total').gte('fecha_pedido', desde).lte('fecha_pedido', hasta).order('id').range(a, b)),
+        traer((a, b) => supabase.from('pagos_credito')
+          .select('id, monto, medio_pago, ventas!inner(anulada)')
+          .eq('ventas.anulada', false).gte('fecha_pago', ini).lt('fecha_pago', fin).order('id').range(a, b)),
       ])
       const suma = (arr: any[], k: string) => arr.reduce((s, x) => s + Number(x[k]), 0)
       const ventas = suma(vs, 'total')
       const costo = det.reduce((s: number, d: any) => s + (d.tipo_item === 'producto' ? Number(d.cantidad) * Number(d.costo_unitario ?? 0) : 0), 0)
       const gastos = suma(gs, 'monto')
       const compras = suma(cs, 'total')
+      const aCredito = vs
+        .filter((v: any) => v.medio_pago === 'credito')
+        .reduce((s: number, v: any) => s + Number(v.total), 0)
+      const cobros = suma(pc, 'monto')
       const neta = ventas - costo - gastos
 
       const porMedio: Record<string, number> = {}
@@ -295,7 +302,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ tipo: st
         { c: 'Ganancia bruta', v: ventas - costo }, { c: 'Gastos', v: gastos },
         { c: 'GANANCIA NETA', v: neta }, { c: 'Margen neto (%)', v: ventas > 0 ? Math.round((neta / ventas) * 1000) / 10 : 0 },
         { c: '', v: null }, { c: 'Compras del período (informativo)', v: compras },
-        { c: 'Flujo de caja (ventas − compras − gastos)', v: ventas - compras - gastos },
+        { c: 'Ventas a crédito del período (aún no son caja)', v: aCredito },
+        { c: 'Cobros de créditos del período (sí son caja)', v: cobros },
+        { c: 'Flujo de caja (ventas cobradas + cobros − compras − gastos)', v: ventas - aCredito + cobros - compras - gastos },
         { c: '', v: null }, { c: 'Ventas por medio de pago', v: null },
         ...Object.entries(porMedio).map(([k, v]) => ({ c: `   ${MEDIO[k] ?? k}`, v })),
       ]
