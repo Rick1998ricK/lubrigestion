@@ -90,11 +90,12 @@ function detalleProducto(p: ProductoVenta) {
   const extra = Object.entries(p.atributos ?? {})
     .filter(([k]) => k !== 'vehiculos')
     .map(([, v]) => (typeof v === 'string' || typeof v === 'number' ? String(v) : ''))
-  const piezas = [p.marca, p.viscosidad_codigo, presentacionDe(p), p.codigo, p.aplicacion, ...extra]
+  const aplic = p.tipo.startsWith('filtro') ? '' : (p.aplicacion ?? '').split('\n')[0]
+  const piezas = [p.marca, p.viscosidad_codigo, presentacionDe(p), p.codigo, aplic, ...extra]
   const vistos = new Set<string>()
   const nombre = p.nombre.toLowerCase()
   return piezas
-    .map((x) => String(x ?? '').trim())
+    .map((x) => String(x ?? '').replace(/\s+/g, ' ').trim())
     .filter((x) => {
       const k = x.toLowerCase()
       if (!x || vistos.has(k) || nombre.includes(k)) return false
